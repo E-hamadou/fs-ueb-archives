@@ -1,0 +1,787 @@
+{% extends 'base.html' %}
+{% block title %}Archives — FS-UEB{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Toggle vue */
+    .view-btn {
+        width: 36px; height: 36px;
+        border-radius: 8px;
+        border: 2px solid #e8f5e9;
+        background: white;
+        color: #666;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: all .2s;
+    }
+    .view-btn.active, .view-btn:hover {
+        background: #1a6b3a;
+        border-color: #1a6b3a;
+        color: white;
+    }
+
+    /* Vue liste */
+    .list-item-card {
+        border: 2px solid #e8f5e9 !important;
+        border-radius: 14px;
+        transition: all .25s;
+        background: white;
+    }
+    .list-item-card:hover {
+        border-color: #1a6b3a !important;
+        box-shadow: 0 8px 24px rgba(26,107,58,.12);
+        transform: translateX(4px);
+    }
+    .list-thumb {
+        width: 90px; height: 90px;
+        border-radius: 10px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .list-thumb-placeholder {
+        width: 90px; height: 90px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #e8f5e9, #fff9e6);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.8rem;
+        flex-shrink: 0;
+    }
+
+    /* Vue grille */
+    .grid-card {
+        border: 2px solid #e8f5e9 !important;
+        border-radius: 14px;
+        transition: all .3s ease;
+        overflow: visible !important;
+        position: relative;
+    }
+    .grid-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 40px rgba(26,107,58,.15);
+        border-color: #1a6b3a !important;
+    }
+    .grid-card .card-img-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px 12px 0 0;
+    }
+    .grid-card .card-img-wrapper img,
+    .grid-card .card-img-wrapper .no-cover {
+        transition: transform .3s;
+    }
+    .grid-card:hover .card-img-wrapper img,
+    .grid-card:hover .card-img-wrapper .no-cover {
+        transform: scale(1.05);
+    }
+    .no-cover {
+        height: 160px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #e8f5e9, #fff9e6);
+        font-size: 2.5rem;
+    }
+
+    /* Prévisualisation au survol */
+    .preview-popup {
+        display: none;
+        position: absolute;
+        left: calc(100% + 12px);
+        top: 0;
+        width: 280px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,.18);
+        border: 1px solid #e8f5e9;
+        z-index: 1000;
+        padding: 1.2rem;
+        pointer-events: none;
+        animation: popIn .2s ease;
+    }
+    /* Si card dans la dernière colonne → popup à gauche */
+    .preview-left .preview-popup {
+        left: auto;
+        right: calc(100% + 12px);
+    }
+    @keyframes popIn {
+        from { opacity: 0; transform: scale(.95) translateY(-4px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .grid-card:hover .preview-popup {
+        display: block;
+    }
+    .preview-popup::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: -8px;
+        width: 16px; height: 16px;
+        background: white;
+        border-left: 1px solid #e8f5e9;
+        border-bottom: 1px solid #e8f5e9;
+        transform: rotate(45deg);
+        border-radius: 2px;
+    }
+    .preview-left .preview-popup::before {
+        left: auto;
+        right: -8px;
+        border-left: none;
+        border-bottom: none;
+        border-right: 1px solid #e8f5e9;
+        border-top: 1px solid #e8f5e9;
+    }
+    .preview-titre {
+        font-weight: 700;
+        font-size: .9rem;
+        color: #0d3320;
+        line-height: 1.4;
+        margin-bottom: .6rem;
+    }
+    .preview-resume {
+        font-size: .8rem;
+        color: #666;
+        line-height: 1.5;
+        margin-bottom: .8rem;
+    }
+    .preview-meta {
+        font-size: .75rem;
+        color: #888;
+        display: flex;
+        flex-direction: column;
+        gap: .3rem;
+    }
+    .preview-meta span {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
+    .preview-bar {
+        height: 3px;
+        background: linear-gradient(90deg, #1a6b3a, #c9a227);
+        border-radius: 2px;
+        margin-bottom: .8rem;
+    }
+    .preview-action {
+        display: block;
+        text-align: center;
+        background: linear-gradient(135deg, #1a6b3a, #2d8a52);
+        color: white;
+        border-radius: 8px;
+        padding: .45rem;
+        font-size: .8rem;
+        font-weight: 600;
+        text-decoration: none;
+        margin-top: .8rem;
+        transition: all .2s;
+        pointer-events: all;
+    }
+
+    /* Mobile : pas de preview popup */
+    @media (max-width: 991px) {
+        .preview-popup { display: none !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <!-- Titre -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0" style="color:#0d3320">
+                <i class="bi bi-archive me-2"></i>Archives
+            </h3>
+            <small class="text-muted">
+                {{ total }} résultat{{ total|pluralize }}
+            </small>
+        </div>
+        {% if user.is_authenticated %}
+        <a href="{% url 'soumettre' %}" class="btn btn-ueb btn-sm">
+            <i class="bi bi-plus-circle me-1"></i>Soumettre
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Barre de recherche -->
+    <form method="get" class="mb-4">
+        <div class="input-group shadow-sm"
+             style="border-radius:10px;overflow:hidden">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" name="q" value="{{ q }}"
+                   class="form-control border-start-0 border-end-0"
+                   placeholder="Rechercher par titre, auteur, mots-clés...">
+            <button type="submit" class="btn btn-ueb px-4">
+                Rechercher
+            </button>
+            {% if q %}
+            <a href="{% url 'liste_projets' %}"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-x"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="row g-4">
+
+        <!-- Sidebar filtres -->
+        <div class="col-lg-3">
+            <button class="btn btn-outline-secondary w-100 mb-3 d-lg-none"
+                    type="button" data-bs-toggle="collapse"
+                    data-bs-target="#filtresCollapse">
+                <i class="bi bi-funnel me-2"></i>Afficher les filtres
+            </button>
+
+            <div class="collapse d-lg-block" id="filtresCollapse">
+                <div class="card p-3"
+                     style="border:2px solid #e8f5e9;border-radius:14px;
+                            background:linear-gradient(135deg,#f8fff9,#fff)">
+                    <h6 class="fw-bold mb-3" style="color:#0d3320">
+                        <i class="bi bi-funnel-fill me-2"
+                           style="color:#1a6b3a"></i>Filtres
+                    </h6>
+                    <form method="get">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">
+                                <i class="bi bi-search me-1"></i>Recherche
+                            </label>
+                            <input type="text" name="q" value="{{ q }}"
+                                   class="form-control form-control-sm"
+                                   placeholder="Titre, auteur..."
+                                   style="border-radius:8px">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">
+                                <i class="bi bi-file-earmark me-1"></i>Type
+                            </label>
+                            <select name="type_projet"
+                                    class="form-select form-select-sm"
+                                    style="border-radius:8px">
+                                <option value="">-- Tous les types --</option>
+                                <option value="rapport_stage" {% if request.GET.type_projet == 'rapport_stage' %}selected{% endif %}>Rapport de Stage</option>
+                                <option value="pfe" {% if request.GET.type_projet == 'pfe' %}selected{% endif %}>Projet de Fin d'Études</option>
+                                <option value="memoire" {% if request.GET.type_projet == 'memoire' %}selected{% endif %}>Mémoire</option>
+                                <option value="these" {% if request.GET.type_projet == 'these' %}selected{% endif %}>Thèse</option>
+                                <option value="tp" {% if request.GET.type_projet == 'tp' %}selected{% endif %}>Travail Pratique</option>
+                                <option value="autre" {% if request.GET.type_projet == 'autre' %}selected{% endif %}>Autre</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">
+                                <i class="bi bi-mortarboard me-1"></i>Niveau
+                            </label>
+                            <select name="niveau"
+                                    class="form-select form-select-sm"
+                                    style="border-radius:8px">
+                                <option value="">-- Tous les niveaux --</option>
+                                <option value="licence1" {% if request.GET.niveau == 'licence1' %}selected{% endif %}>Licence 1</option>
+                                <option value="licence2" {% if request.GET.niveau == 'licence2' %}selected{% endif %}>Licence 2</option>
+                                <option value="licence3" {% if request.GET.niveau == 'licence3' %}selected{% endif %}>Licence 3</option>
+                                <option value="master1" {% if request.GET.niveau == 'master1' %}selected{% endif %}>Master 1</option>
+                                <option value="master2" {% if request.GET.niveau == 'master2' %}selected{% endif %}>Master 2</option>
+                                <option value="doctorat" {% if request.GET.niveau == 'doctorat' %}selected{% endif %}>Doctorat</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">
+                                <i class="bi bi-diagram-3 me-1"></i>Filière
+                            </label>
+                            <select name="filiere"
+                                    class="form-select form-select-sm"
+                                    style="border-radius:8px">
+                                <option value="">-- Toutes les filières --</option>
+                                {% for filiere in filter.form.filiere.field.queryset %}
+                                <option value="{{ filiere.pk }}"
+                                    {% if request.GET.filiere == filiere.pk|stringformat:"s" %}selected{% endif %}>
+                                    {{ filiere.nom }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">
+                                <i class="bi bi-calendar me-1"></i>Année
+                            </label>
+                            <input type="number" name="annee"
+                                   value="{{ request.GET.annee|default:'' }}"
+                                   class="form-control form-control-sm"
+                                   placeholder="Ex: 2024"
+                                   style="border-radius:8px">
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-ueb btn-sm">
+                                <i class="bi bi-search me-1"></i>Appliquer
+                            </button>
+                            <a href="{% url 'liste_projets' %}"
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-x-circle me-1"></i>Réinitialiser
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Stats -->
+                <div class="card p-3 mt-3"
+                     style="border:2px solid #fff3cd;border-radius:14px;
+                            background:linear-gradient(135deg,#fffdf0,#fff)">
+                    <h6 class="fw-bold mb-2"
+                        style="color:#0d3320;font-size:.85rem">
+                        <i class="bi bi-bar-chart-fill me-1"
+                           style="color:#c9a227"></i>Résultats
+                    </h6>
+                    <div class="text-center py-2">
+                        <div class="fw-bold"
+                             style="font-size:2rem;color:#1a6b3a">
+                            {{ total }}
+                        </div>
+                        <div class="text-muted small">
+                            travaux trouvé{{ total|pluralize }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="col-lg-9">
+
+            <!-- Recommandés pour votre filière -->
+            {% if filiere_user and projets_filiere %}
+            <div class="mb-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="px-3 py-1 rounded-pill fw-semibold"
+                         style="background:#e8f5e9;color:#1a6b3a;
+                                font-size:.85rem">
+                        <i class="bi bi-stars me-1"></i>
+                        Recommandés — {{ filiere_user.nom }}
+                    </div>
+                    <div style="flex:1;height:1px;background:#e8f5e9"></div>
+                </div>
+                <div class="row g-2">
+                    {% for projet in projets_filiere %}
+                    <div class="col-6 col-md-3">
+                        <div class="card h-100"
+                             style="border:2px solid #1a6b3a !important;
+                                    border-radius:12px;
+                                    background:linear-gradient(135deg,#f8fff9,#fff)">
+                            <div class="d-flex align-items-center
+                                        justify-content-center"
+                                 style="height:90px;border-radius:10px 10px 0 0;
+                                        background:linear-gradient(135deg,#e8f5e9,#fff9e6)">
+                                {% if projet.couverture %}
+                                <img src="{{ projet.couverture.url }}"
+                                     style="height:90px;width:100%;
+                                            object-fit:cover;
+                                            border-radius:10px 10px 0 0"
+                                     alt="{{ projet.titre }}">
+                                {% elif projet.type_projet == 'rapport_stage' %}
+                                <i class="bi bi-briefcase"
+                                   style="font-size:1.8rem;color:#1a6b3a;opacity:.7"></i>
+                                {% elif projet.type_projet == 'pfe' %}
+                                <i class="bi bi-mortarboard"
+                                   style="font-size:1.8rem;color:#c9a227;opacity:.7"></i>
+                                {% elif projet.type_projet == 'memoire' %}
+                                <i class="bi bi-book"
+                                   style="font-size:1.8rem;color:#0d6efd;opacity:.7"></i>
+                                {% else %}
+                                <i class="bi bi-file-earmark-pdf"
+                                   style="font-size:1.8rem;color:#dc3545;opacity:.7"></i>
+                                {% endif %}
+                            </div>
+                            <div class="card-body p-2">
+                                <span class="badge bg-success-subtle
+                                             text-success badge-type mb-1">
+                                    {{ projet.get_type_projet_display }}
+                                </span>
+                                <h6 class="fw-semibold mb-1"
+                                    style="font-size:.78rem;line-height:1.3">
+                                    <a href="{% url 'detail_projet' projet.pk %}"
+                                       class="text-decoration-none text-dark
+                                              stretched-link">
+                                        {{ projet.titre|truncatechars:45 }}
+                                    </a>
+                                </h6>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted"
+                                           style="font-size:.7rem">
+                                        {{ projet.annee }}
+                                    </small>
+                                    <small class="text-muted"
+                                           style="font-size:.7rem">
+                                        <i class="bi bi-eye me-1"></i>{{ projet.vues }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr style="border-color:#e8f5e9;margin:1.5rem 0 0">
+            </div>
+            {% endif %}
+
+            <!-- Barre vue grille/liste -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <small class="text-muted">
+                    <i class="bi bi-collection me-1"></i>
+                    {{ page_obj.paginator.count }} travaux au total
+                </small>
+                <div class="d-flex gap-2 align-items-center">
+                    <small class="text-muted me-1">Vue :</small>
+                    <button class="view-btn active" id="btn-grille"
+                            onclick="setView('grille')" title="Vue grille">
+                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                    </button>
+                    <button class="view-btn" id="btn-liste"
+                            onclick="setView('liste')" title="Vue liste">
+                        <i class="bi bi-list-ul"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VUE GRILLE avec prévisualisation -->
+            <div id="vue-grille">
+                <div class="row g-3" id="grille-container">
+                    {% for projet in page_obj %}
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card h-100 grid-card"
+                             data-col="{{ forloop.counter0|divisibleby:3 }}">
+                            <div class="card-img-wrapper">
+                                {% if projet.couverture %}
+                                <img src="{{ projet.couverture.url }}"
+                                     style="height:160px;width:100%;
+                                            object-fit:cover"
+                                     alt="{{ projet.titre }}">
+                                {% else %}
+                                <div class="no-cover">
+                                    {% if projet.type_projet == 'rapport_stage' %}
+                                    <i class="bi bi-briefcase"
+                                       style="color:#1a6b3a;opacity:.6"></i>
+                                    {% elif projet.type_projet == 'pfe' %}
+                                    <i class="bi bi-mortarboard"
+                                       style="color:#c9a227;opacity:.6"></i>
+                                    {% elif projet.type_projet == 'memoire' %}
+                                    <i class="bi bi-book"
+                                       style="color:#0d6efd;opacity:.6"></i>
+                                    {% else %}
+                                    <i class="bi bi-file-earmark-pdf"
+                                       style="color:#dc3545;opacity:.6"></i>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="card-body d-flex flex-column p-3">
+                                <div class="d-flex gap-1 mb-2 flex-wrap">
+                                    <span class="badge badge-type
+                                                 bg-success-subtle text-success">
+                                        {{ projet.get_type_projet_display }}
+                                    </span>
+                                    <span class="badge badge-type
+                                                 bg-warning-subtle text-warning-emphasis">
+                                        {{ projet.annee }}
+                                    </span>
+                                    {% if projet.filiere %}
+                                    <span class="badge badge-type
+                                                 bg-primary-subtle text-primary">
+                                        {{ projet.filiere.code }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <h6 class="card-title fw-semibold mb-2"
+                                    style="line-height:1.4">
+                                    <a href="{% url 'detail_projet' projet.pk %}"
+                                       class="text-decoration-none text-dark
+                                              stretched-link">
+                                        {{ projet.titre|truncatechars:65 }}
+                                    </a>
+                                </h6>
+                                <p class="small text-muted flex-grow-1 mb-2">
+                                    {{ projet.resume|truncatechars:85 }}
+                                </p>
+                                <div class="d-flex justify-content-between
+                                            align-items-center pt-2 mt-auto"
+                                     style="border-top:1px solid #e8f5e9">
+                                    <small class="text-muted">
+                                        <i class="bi bi-person-fill me-1"
+                                           style="color:#1a6b3a"></i>
+                                        {{ projet.auteur.get_full_name|default:projet.auteur.username|truncatechars:18 }}
+                                    </small>
+                                    <div class="d-flex gap-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-eye-fill me-1"
+                                               style="color:#1a6b3a"></i>{{ projet.vues }}
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="bi bi-download me-1"
+                                               style="color:#c9a227"></i>{{ projet.telechargements }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Popup prévisualisation -->
+                            <div class="preview-popup">
+                                <div class="preview-bar"></div>
+                                <div class="preview-titre">
+                                    {{ projet.titre }}
+                                </div>
+                                <div class="preview-resume">
+                                    {{ projet.resume|truncatechars:150 }}
+                                </div>
+                                <div class="preview-meta">
+                                    <span>
+                                        <i class="bi bi-person-fill"
+                                           style="color:#1a6b3a"></i>
+                                        {{ projet.auteur.get_full_name|default:projet.auteur.username }}
+                                    </span>
+                                    {% if projet.encadreur %}
+                                    <span>
+                                        <i class="bi bi-person-badge"
+                                           style="color:#c9a227"></i>
+                                        {{ projet.encadreur }}
+                                    </span>
+                                    {% endif %}
+                                    {% if projet.filiere %}
+                                    <span>
+                                        <i class="bi bi-diagram-3"
+                                           style="color:#0d6efd"></i>
+                                        {{ projet.filiere.nom }}
+                                    </span>
+                                    {% endif %}
+                                    <span>
+                                        <i class="bi bi-calendar"></i>
+                                        {{ projet.annee }}
+                                    </span>
+                                    <span>
+                                        <i class="bi bi-eye-fill"
+                                           style="color:#1a6b3a"></i>
+                                        {{ projet.vues }} vues •
+                                        <i class="bi bi-download ms-1"
+                                           style="color:#c9a227"></i>
+                                        {{ projet.telechargements }} téléchargements
+                                    </span>
+                                    {% if projet.mots_cles %}
+                                    <span style="flex-wrap:wrap;gap:.3rem">
+                                        <i class="bi bi-tags"></i>
+                                        {{ projet.mots_cles|truncatechars:60 }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'detail_projet' projet.pk %}"
+                                   class="preview-action">
+                                    <i class="bi bi-eye me-1"></i>
+                                    Voir le projet
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-search"
+                           style="font-size:3.5rem;color:#ccc"></i>
+                        <h5 class="text-muted mt-3">Aucun résultat</h5>
+                        <p class="text-muted small">
+                            Essayez d'autres critères.
+                        </p>
+                        <a href="{% url 'liste_projets' %}"
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Voir tous les projets
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- VUE LISTE -->
+            <div id="vue-liste" style="display:none">
+                <div class="d-flex flex-column gap-2">
+                    {% for projet in page_obj %}
+                    <div class="list-item-card p-3">
+                        <div class="d-flex gap-3 align-items-center">
+                            {% if projet.couverture %}
+                            <img src="{{ projet.couverture.url }}"
+                                 class="list-thumb" alt="{{ projet.titre }}">
+                            {% else %}
+                            <div class="list-thumb-placeholder">
+                                {% if projet.type_projet == 'rapport_stage' %}
+                                <i class="bi bi-briefcase"
+                                   style="color:#1a6b3a"></i>
+                                {% elif projet.type_projet == 'pfe' %}
+                                <i class="bi bi-mortarboard"
+                                   style="color:#c9a227"></i>
+                                {% elif projet.type_projet == 'memoire' %}
+                                <i class="bi bi-book"
+                                   style="color:#0d6efd"></i>
+                                {% else %}
+                                <i class="bi bi-file-earmark-pdf"
+                                   style="color:#dc3545"></i>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex gap-1 mb-1 flex-wrap">
+                                    <span class="badge badge-type
+                                                 bg-success-subtle text-success">
+                                        {{ projet.get_type_projet_display }}
+                                    </span>
+                                    <span class="badge badge-type
+                                                 bg-warning-subtle text-warning-emphasis">
+                                        {{ projet.annee }}
+                                    </span>
+                                    {% if projet.filiere %}
+                                    <span class="badge badge-type
+                                                 bg-primary-subtle text-primary">
+                                        {{ projet.filiere.code }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <h6 class="fw-semibold mb-1"
+                                    style="line-height:1.4">
+                                    <a href="{% url 'detail_projet' projet.pk %}"
+                                       class="text-decoration-none text-dark">
+                                        {{ projet.titre|truncatechars:80 }}
+                                    </a>
+                                </h6>
+                                <p class="small text-muted mb-1"
+                                   style="line-height:1.4">
+                                    {{ projet.resume|truncatechars:120 }}
+                                </p>
+                                <div class="d-flex gap-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-person-fill me-1"
+                                           style="color:#1a6b3a"></i>
+                                        {{ projet.auteur.get_full_name|default:projet.auteur.username }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-eye-fill me-1"
+                                           style="color:#1a6b3a"></i>{{ projet.vues }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-download me-1"
+                                           style="color:#c9a227"></i>{{ projet.telechargements }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0 d-none d-md-block">
+                                <a href="{% url 'detail_projet' projet.pk %}"
+                                   class="btn btn-ueb btn-sm"
+                                   style="border-radius:8px">
+                                    <i class="bi bi-eye me-1"></i>Voir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-search"
+                           style="font-size:3.5rem;color:#ccc"></i>
+                        <h5 class="text-muted mt-3">Aucun résultat</h5>
+                        <a href="{% url 'liste_projets' %}"
+                           class="btn btn-outline-secondary btn-sm mt-2">
+                            Voir tous les projets
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ page_obj.previous_page_number }}&q={{ q }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link"
+                              style="background:#1a6b3a;border-color:#1a6b3a">
+                            {{ num }}
+                        </span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ num }}&q={{ q }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ page_obj.next_page_number }}&q={{ q }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Toggle vue grille / liste ─────────────────────────────────────
+function setView(mode) {
+    const grille = document.getElementById('vue-grille');
+    const liste = document.getElementById('vue-liste');
+    const btnGrille = document.getElementById('btn-grille');
+    const btnListe = document.getElementById('btn-liste');
+    if (mode === 'grille') {
+        grille.style.display = 'block';
+        liste.style.display = 'none';
+        btnGrille.classList.add('active');
+        btnListe.classList.remove('active');
+        localStorage.setItem('fsueb-view', 'grille');
+    } else {
+        grille.style.display = 'none';
+        liste.style.display = 'block';
+        btnGrille.classList.remove('active');
+        btnListe.classList.add('active');
+        localStorage.setItem('fsueb-view', 'liste');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Restaurer vue préférée
+    const saved = localStorage.getItem('fsueb-view');
+    if (saved === 'liste') setView('liste');
+
+    // Détecter les cards en dernière colonne → popup à gauche
+    const cards = document.querySelectorAll('#grille-container .col-md-6');
+    cards.forEach((col, i) => {
+        const card = col.querySelector('.grid-card');
+        if (!card) return;
+        // Sur écran xl (3 colonnes) : dernière colonne = index % 3 === 2
+        // On utilise JS pour détecter la position réelle
+        col.addEventListener('mouseenter', () => {
+            const rect = col.getBoundingClientRect();
+            const containerRect = document.getElementById('grille-container')
+                .getBoundingClientRect();
+            const popup = card.querySelector('.preview-popup');
+            if (!popup) return;
+            // Si la card est dans le dernier tiers → popup à gauche
+            const relativeRight = containerRect.right - rect.right;
+            if (relativeRight < 320) {
+                card.classList.add('preview-left');
+            } else {
+                card.classList.remove('preview-left');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

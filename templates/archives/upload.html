@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Soumettre un travail — FS-UEB{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-hero {
+        background: linear-gradient(135deg, #0d3320 0%, #1a6b3a 60%, #2d8a52 100%);
+        padding: 3rem 0 6rem;
+        margin-bottom: -4rem;
+    }
+    .upload-card {
+        border-radius: 20px !important;
+        border: none !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,.12) !important;
+    }
+    .step-badge {
+        width: 32px; height: 32px;
+        background: #e8f5e9;
+        color: #1a6b3a;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: .85rem;
+        flex-shrink: 0;
+    }
+    .step-badge.active {
+        background: #1a6b3a;
+        color: white;
+    }
+    .section-title {
+        color: #0d3320;
+        font-weight: 700;
+        font-size: 1rem;
+        padding-bottom: .5rem;
+        border-bottom: 2px solid #e8f5e9;
+        margin-bottom: 1.2rem;
+    }
+    .tip-card {
+        background: linear-gradient(135deg, #f0f9f4, #fff9e6);
+        border: 1px solid #e8f5e9;
+        border-radius: 12px;
+        padding: 1rem;
+        font-size: .85rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #1a6b3a;
+        box-shadow: 0 0 0 .2rem rgba(26,107,58,.12);
+    }
+    .form-label { font-weight: 500; font-size: .88rem; color: #444; }
+    .required-star { color: #dc3545; }
+    .file-zone {
+        border: 2px dashed #c8e6c9;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8fff9;
+        transition: all .2s;
+        cursor: pointer;
+    }
+    .file-zone:hover { border-color: #1a6b3a; background: #f0f9f4; }
+    .btn-soumettre {
+        background: linear-gradient(135deg, #1a6b3a, #2d8a52);
+        border: none; color: white;
+        padding: .8rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all .2s;
+    }
+    .btn-soumettre:hover {
+        background: linear-gradient(135deg, #0d3320, #1a6b3a);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(26,107,58,.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="upload-hero">
+    <div class="container text-center text-white">
+        <div class="mx-auto mb-3 rounded-circle d-flex align-items-center
+                    justify-content-center"
+             style="width:64px;height:64px;
+                    background:rgba(255,255,255,.15);
+                    backdrop-filter:blur(10px)">
+            <i class="bi bi-cloud-upload" style="font-size:1.8rem"></i>
+        </div>
+        <h2 class="fw-bold mb-2">Soumettre un travail académique</h2>
+        <p style="color:rgba(255,255,255,.75);max-width:500px;margin:0 auto">
+            Partagez votre travail avec la communauté FS-UEB.
+            Il sera visible après validation par un administrateur.
+        </p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card upload-card p-4 p-md-5">
+
+                <!-- Étapes indicateurs -->
+                <div class="d-flex align-items-center gap-2 mb-4 pb-3"
+                     style="border-bottom:1px solid #f0f0f0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="step-badge active">1</div>
+                        <span class="small fw-semibold" style="color:#1a6b3a">
+                            Informations
+                        </span>
+                    </div>
+                    <div style="flex:1;height:2px;background:#e8f5e9;
+                                border-radius:2px"></div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="step-badge active">2</div>
+                        <span class="small fw-semibold" style="color:#1a6b3a">
+                            Contenu
+                        </span>
+                    </div>
+                    <div style="flex:1;height:2px;background:#e8f5e9;
+                                border-radius:2px"></div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="step-badge active">3</div>
+                        <span class="small fw-semibold" style="color:#1a6b3a">
+                            Fichier
+                        </span>
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Section 1 : Informations générales -->
+                    <div class="section-title">
+                        <i class="bi bi-info-circle me-2"
+                           style="color:#1a6b3a"></i>Informations générales
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Titre du projet <span class="required-star">*</span>
+                        </label>
+                        <input type="text" name="titre"
+                               class="form-control"
+                               placeholder="Ex: Conception d'un système de gestion..."
+                               required
+                               style="border-radius:10px">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                Type <span class="required-star">*</span>
+                            </label>
+                            <select name="type_projet" class="form-select"
+                                    required style="border-radius:10px">
+                                <option value="">-- Choisir --</option>
+                                <option value="rapport_stage">Rapport de Stage</option>
+                                <option value="pfe">Projet de Fin d'Études</option>
+                                <option value="memoire">Mémoire</option>
+                                <option value="these">Thèse</option>
+                                <option value="tp">Travail Pratique</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                Niveau <span class="required-star">*</span>
+                            </label>
+                            <select name="niveau" class="form-select"
+                                    required style="border-radius:10px">
+                                <option value="">-- Choisir --</option>
+                                <option value="licence1">Licence 1</option>
+                                <option value="licence2">Licence 2</option>
+                                <option value="licence3">Licence 3</option>
+                                <option value="master1">Master 1</option>
+                                <option value="master2">Master 2</option>
+                                <option value="doctorat">Doctorat</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Filière</label>
+                            <select name="filiere" class="form-select"
+                                    style="border-radius:10px">
+                                <option value="">-- Optionnel --</option>
+                                {% for filiere in form.filiere.field.queryset %}
+                                <option value="{{ filiere.pk }}">
+                                    {{ filiere.nom }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-8">
+                            <label class="form-label">Encadreur</label>
+                            <input type="text" name="encadreur"
+                                   class="form-control"
+                                   placeholder="Nom du professeur encadreur"
+                                   style="border-radius:10px">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                Année <span class="required-star">*</span>
+                            </label>
+                            <input type="number" name="annee"
+                                   class="form-control"
+                                   value="2026" min="2000" max="2100"
+                                   required style="border-radius:10px">
+                        </div>
+                    </div>
+
+                    <!-- Section 2 : Contenu -->
+                    <div class="section-title">
+                        <i class="bi bi-file-text me-2"
+                           style="color:#1a6b3a"></i>Contenu du travail
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Résumé <span class="required-star">*</span>
+                        </label>
+                        <textarea name="resume" class="form-control"
+                                  rows="5" required
+                                  style="border-radius:10px"
+                                  placeholder="Décrivez brièvement votre travail : contexte, objectifs, méthodologie, résultats..."></textarea>
+                        <div class="form-text">
+                            <i class="bi bi-lightbulb me-1 text-warning"></i>
+                            Un bon résumé augmente les chances que votre travail
+                            soit trouvé et téléchargé.
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Mots-clés</label>
+                        <input type="text" name="mots_cles"
+                               class="form-control"
+                               placeholder="Python, Django, Base de données, IA..."
+                               style="border-radius:10px">
+                        <div class="form-text">
+                            Séparez les mots-clés par des virgules.
+                        </div>
+                    </div>
+
+                    <!-- Section 3 : Fichiers -->
+                    <div class="section-title">
+                        <i class="bi bi-paperclip me-2"
+                           style="color:#1a6b3a"></i>Fichiers
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-7">
+                            <label class="form-label">
+                                Fichier PDF <span class="required-star">*</span>
+                            </label>
+                            <div class="file-zone"
+                                 onclick="document.getElementById('id_fichier').click()">
+                                <i class="bi bi-file-earmark-pdf"
+                                   style="font-size:2.5rem;color:#1a6b3a;opacity:.6"></i>
+                                <div class="fw-semibold mt-2 mb-1"
+                                     style="color:#1a6b3a">
+                                    Cliquez pour choisir le PDF
+                                </div>
+                                <div class="text-muted small">
+                                    Format PDF uniquement
+                                </div>
+                                <div id="pdf-name" class="mt-2 small fw-semibold"
+                                     style="color:#1a6b3a"></div>
+                            </div>
+                            <input type="file" name="fichier"
+                                   id="id_fichier" accept=".pdf"
+                                   required style="display:none"
+                                   onchange="showFileName(this,'pdf-name')">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">
+                                Image de couverture
+                                <span class="text-muted fw-normal">(optionnel)</span>
+                            </label>
+                            <div class="file-zone"
+                                 onclick="document.getElementById('id_couverture').click()"
+                                 style="border-color:#fff3cd;background:#fffdf0">
+                                <i class="bi bi-image"
+                                   style="font-size:2rem;color:#c9a227;opacity:.6"></i>
+                                <div class="fw-semibold mt-2 mb-1"
+                                     style="color:#c9a227;font-size:.85rem">
+                                    Ajouter une image
+                                </div>
+                                <div class="text-muted small">
+                                    JPG, PNG recommandé
+                                </div>
+                                <div id="img-name" class="mt-2 small fw-semibold"
+                                     style="color:#c9a227"></div>
+                            </div>
+                            <input type="file" name="couverture"
+                                   id="id_couverture"
+                                   accept="image/*" style="display:none"
+                                   onchange="showFileName(this,'img-name')">
+                        </div>
+                    </div>
+
+                    <!-- Conseil -->
+                    <div class="tip-card mb-4">
+                        <div class="fw-semibold mb-1" style="color:#1a6b3a">
+                            <i class="bi bi-shield-check me-1"></i>
+                            Avant de soumettre
+                        </div>
+                        <ul class="mb-0 ps-3 text-muted">
+                            <li>Votre travail sera examiné avant d'être publié</li>
+                            <li>Assurez-vous que le fichier PDF est lisible</li>
+                            <li>Vous serez notifié après validation</li>
+                        </ul>
+                    </div>
+
+                    <!-- Bouton submit -->
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{% url 'liste_projets' %}"
+                           class="btn btn-outline-secondary px-4"
+                           style="border-radius:10px">
+                            <i class="bi bi-arrow-left me-1"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn-soumettre">
+                            <i class="bi bi-cloud-upload me-2"></i>
+                            Soumettre le travail
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showFileName(input, targetId) {
+    const el = document.getElementById(targetId);
+    if (input.files && input.files[0]) {
+        el.textContent = '✓ ' + input.files[0].name;
+    }
+}
+</script>
+{% endblock %}

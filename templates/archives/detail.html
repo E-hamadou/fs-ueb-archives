@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}{{ projet.titre }} — FS-UEB{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Accueil</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'liste_projets' %}">Archives</a></li>
+            <li class="breadcrumb-item active">{{ projet.titre|truncatechars:50 }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- Projet principal -->
+            <div class="card p-4 mb-4">
+                <div class="d-flex gap-2 mb-3 flex-wrap">
+                    <span class="badge bg-success-subtle text-success fs-6">{{ projet.get_type_projet_display }}</span>
+                    <span class="badge bg-primary-subtle text-primary fs-6">{{ projet.get_niveau_display }}</span>
+                    {% if projet.filiere %}
+                    <span class="badge bg-light text-dark fs-6">{{ projet.filiere.code }}</span>
+                    {% endif %}
+                </div>
+                <h1 class="h3 fw-bold mb-3" style="color:#0d3320">{{ projet.titre }}</h1>
+                <div class="row g-3 mb-4 p-3" style="background:#f8f9fa;border-radius:8px">
+                    <div class="col-6 col-md-3">
+                        <div class="small text-muted">Auteur</div>
+                        <div class="fw-semibold small">{{ projet.auteur.get_full_name|default:projet.auteur.username }}</div>
+                    </div>
+                    {% if projet.encadreur %}
+                    <div class="col-6 col-md-3">
+                        <div class="small text-muted">Encadreur</div>
+                        <div class="fw-semibold small">{{ projet.encadreur }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="col-6 col-md-3">
+                        <div class="small text-muted">Année</div>
+                        <div class="fw-semibold small">{{ projet.annee }}-{{ projet.annee|add:1 }}</div>
+                    </div>
+                    {% if projet.note %}
+                    <div class="col-6 col-md-3">
+                        <div class="small text-muted">Note</div>
+                        <div class="fw-semibold small text-warning">{{ projet.note }}/20</div>
+                    </div>
+                    {% endif %}
+                </div>
+                <h5 class="fw-bold">Résumé</h5>
+                <p class="text-muted" style="line-height:1.7">{{ projet.resume }}</p>
+                {% if projet.get_mots_cles_list %}
+                <div class="mt-3">
+                    <span class="text-muted small me-2">Mots-clés :</span>
+                    {% for mot in projet.get_mots_cles_list %}
+                    <span class="badge bg-light text-secondary me-1">{{ mot }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Commentaires -->
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-chat-dots me-2"></i>Commentaires ({{ commentaires.count }})
+                </h5>
+                {% for c in commentaires %}
+                <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                             style="width:40px;height:40px;background:#1a6b3a;font-size:.9rem">
+                            {{ c.auteur.first_name.0|default:c.auteur.username.0|upper }}
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-semibold small">{{ c.auteur.get_full_name|default:c.auteur.username }}</span>
+                            <small class="text-muted">{{ c.date|date:"d/m/Y" }}</small>
+                        </div>
+                        {% if c.note %}
+                        <div class="mb-1">
+                            {% for i in "12345" %}
+                            <i class="bi bi-star{% if forloop.counter <= c.note %}-fill text-warning{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <p class="mb-0 small text-muted">{{ c.contenu }}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">Aucun commentaire pour l'instant.</p>
+                {% endfor %}
+
+                {% if user.is_authenticated %}
+                <hr>
+                <h6 class="fw-bold">Laisser un avis</h6>
+                <form method="post">
+                    {% csrf_token %}
+                    {% load crispy_forms_tags %}
+                    {% crispy form %}
+                </form>
+                {% else %}
+                <div class="alert alert-light text-center">
+                    <a href="{% url 'login' %}">Connectez-vous</a> pour commenter.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card p-3 mb-3 text-center">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="p-2" style="background:#f0f9f4;border-radius:8px">
+                            <div class="fw-bold" style="color:#1a6b3a;font-size:1.3rem">{{ projet.vues }}</div>
+                            <small class="text-muted">Vues</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2" style="background:#fff9e6;border-radius:8px">
+                            <div class="fw-bold" style="color:#c9a227;font-size:1.3rem">{{ projet.telechargements }}</div>
+                            <small class="text-muted">Téléchargements</small>
+                        </div>
+                    </div>
+                </div>
+                {% if user.is_authenticated %}
+                <a href="{% url 'telecharger' projet.pk %}" class="btn btn-ueb w-100 mb-2">
+                    <i class="bi bi-download me-2"></i>Télécharger le PDF
+                </a>
+                {% else %}
+                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-ueb w-100 mb-2">
+                    <i class="bi bi-lock me-2"></i>Connexion pour télécharger
+                </a>
+                {% endif %}
+                <small class="text-muted">Fichier PDF • {{ projet.date_soumission|date:"d/m/Y" }}</small>
+            </div>
+
+            {% if projets_similaires %}
+            <div class="card p-3">
+                <h6 class="fw-bold mb-3">Travaux similaires</h6>
+                {% for p in projets_similaires %}
+                <a href="{% url 'detail_projet' p.pk %}" class="text-decoration-none">
+                    <div class="d-flex gap-2 mb-2 p-2 rounded" style="background:#f8f9fa">
+                        <i class="bi bi-file-earmark-text text-muted mt-1"></i>
+                        <div>
+                            <div class="small fw-semibold text-dark">{{ p.titre|truncatechars:55 }}</div>
+                            <div class="text-muted" style="font-size:.7rem">{{ p.annee }}</div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

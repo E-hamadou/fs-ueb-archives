@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Statistiques — FS-UEB{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold" style="color:#0d3320">
+            <i class="bi bi-graph-up me-2"></i>Statistiques des Archives
+        </h2>
+        <p class="text-muted">{{ total }} travaux académiques archivés</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Par filière -->
+        <div class="col-lg-6">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-mortarboard me-2" style="color:#1a6b3a"></i>
+                    Par filière
+                </h5>
+                {% for f in par_filiere %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-semibold small">
+                            {{ f.nom }}
+                            <span class="text-muted">({{ f.code }})</span>
+                        </span>
+                        <span class="badge bg-success-subtle text-success">
+                            {{ f.nb_valides }} validés
+                        </span>
+                    </div>
+                    <div class="progress" style="height:8px;border-radius:4px">
+                        {% if total %}
+                        <div class="progress-bar"
+                             style="width:{% widthratio f.nb_valides total 100 %}%;
+                                    background:#1a6b3a;border-radius:4px">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">Aucune filière enregistrée.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Par type -->
+        <div class="col-lg-6">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-file-earmark-text me-2"
+                       style="color:#c9a227"></i>Par type de travail
+                </h5>
+                {% for item in par_type %}
+                <div class="d-flex align-items-center gap-3 mb-3 p-2 rounded"
+                     style="background:#f8f9fa">
+                    <div class="fw-bold" style="color:#1a6b3a;min-width:2rem;
+                                                 text-align:center">
+                        {{ item.nb }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="small fw-semibold">{{ item.type_projet }}</div>
+                        <div class="progress mt-1" style="height:4px">
+                            {% if total %}
+                            <div class="progress-bar"
+                                 style="width:{% widthratio item.nb total 100 %}%;
+                                        background:#c9a227">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Évolution par année -->
+        <div class="col-lg-6">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-calendar-range me-2"
+                       style="color:#0d6efd"></i>Évolution par année
+                </h5>
+                {% for item in par_annee %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>{{ item.annee }}-{{ item.annee|add:1 }}</span>
+                        <span class="fw-bold">{{ item.nb }} travaux</span>
+                    </div>
+                    <div class="progress" style="height:6px">
+                        {% if total %}
+                        <div class="progress-bar"
+                             style="width:{% widthratio item.nb total 100 %}%;
+                                    background:#0d6efd">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Top téléchargements -->
+        <div class="col-lg-6">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-download me-2" style="color:#fd7e14"></i>
+                    Top 5 téléchargements
+                </h5>
+                {% for projet in top_projets %}
+                <div class="d-flex gap-3 align-items-center mb-3">
+                    <div class="fw-bold text-center rounded-circle d-flex
+                                align-items-center justify-content-center text-white"
+                         style="width:32px;height:32px;min-width:32px;
+                                background:#1a6b3a;font-size:.8rem">
+                        {{ forloop.counter }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <a href="{% url 'detail_projet' projet.pk %}"
+                           class="text-decoration-none text-dark fw-semibold small">
+                            {{ projet.titre|truncatechars:55 }}
+                        </a>
+                        <div class="text-muted" style="font-size:.75rem">
+                            <i class="bi bi-download me-1"></i>{{ projet.telechargements }}
+                            <i class="bi bi-eye ms-2 me-1"></i>{{ projet.vues }}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">Aucun téléchargement pour l'instant.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

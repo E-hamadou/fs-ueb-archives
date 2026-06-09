@@ -1,0 +1,655 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Accueil — FS-UEB Archives{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Animations d'entrée */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInLeft {
+        from { opacity: 0; transform: translateX(-30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .animate-fade-up {
+        opacity: 0;
+        animation: fadeInUp .7s ease forwards;
+    }
+    .animate-fade-left {
+        opacity: 0;
+        animation: fadeInLeft .7s ease forwards;
+    }
+    .animate-fade-right {
+        opacity: 0;
+        animation: fadeInRight .7s ease forwards;
+    }
+    .delay-1 { animation-delay: .1s; }
+    .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; }
+    .delay-4 { animation-delay: .4s; }
+    .delay-5 { animation-delay: .5s; }
+    .delay-6 { animation-delay: .6s; }
+
+    /* Hero */
+    .hero-section {
+        background: linear-gradient(135deg, #0d3320 0%, #1a6b3a 60%, #2d8a52 100%);
+        min-height: 480px;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: -50%; right: -20%;
+        width: 600px; height: 600px;
+        background: rgba(255,255,255,.03);
+        border-radius: 50%;
+    }
+    .hero-section::after {
+        content: '';
+        position: absolute;
+        bottom: -30%; left: -10%;
+        width: 400px; height: 400px;
+        background: rgba(201,162,39,.05);
+        border-radius: 50%;
+    }
+    .hero-badge {
+        background: rgba(201,162,39,.2);
+        color: #c9a227;
+        font-size: .8rem;
+        border-radius: 20px;
+        padding: .4rem 1rem;
+        display: inline-block;
+        border: 1px solid rgba(201,162,39,.3);
+    }
+    .btn-hero-primary {
+        background: #c9a227;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: .75rem 1.8rem;
+        font-weight: 600;
+        transition: all .2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-hero-primary:hover {
+        background: #a8841f;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(201,162,39,.4);
+    }
+    .btn-hero-secondary {
+        background: rgba(255,255,255,.1);
+        color: white;
+        border: 2px solid rgba(255,255,255,.3);
+        border-radius: 10px;
+        padding: .75rem 1.8rem;
+        font-weight: 600;
+        backdrop-filter: blur(4px);
+        transition: all .2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-hero-secondary:hover {
+        background: rgba(255,255,255,.2);
+        color: white;
+        transform: translateY(-2px);
+        border-color: rgba(255,255,255,.6);
+    }
+
+    /* Stats */
+    .stats-section {
+        background: white;
+        border-bottom: 1px solid #eee;
+    }
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,.06);
+        border: 2px solid transparent;
+        transition: all .3s;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #1a6b3a, #c9a227);
+        transform: scaleX(0);
+        transition: transform .3s;
+    }
+    .stat-card:hover { border-color: #e8f5e9; transform: translateY(-4px); }
+    .stat-card:hover::before { transform: scaleX(1); }
+    .stat-number {
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: #1a6b3a;
+        line-height: 1;
+    }
+    .stat-icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        background: #e8f5e9;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto .8rem;
+        font-size: 1.3rem;
+        color: #1a6b3a;
+    }
+
+    /* Cards projets — cliquables sur toute la surface */
+    .projet-card {
+        border: 2px solid #e8f5e9 !important;
+        border-radius: 16px !important;
+        transition: all .3s ease !important;
+        overflow: hidden;
+        cursor: pointer;
+    }
+    .projet-card:hover {
+        transform: translateY(-6px) !important;
+        box-shadow: 0 16px 40px rgba(26,107,58,.15),
+                    0 0 0 1px rgba(26,107,58,.1) !important;
+        border-color: #1a6b3a !important;
+    }
+    .card-img-wrapper {
+        position: relative;
+        overflow: hidden;
+    }
+    .card-img-wrapper img,
+    .card-img-wrapper .no-cover {
+        transition: transform .3s ease;
+    }
+    .projet-card:hover .card-img-wrapper img,
+    .projet-card:hover .card-img-wrapper .no-cover {
+        transform: scale(1.05);
+    }
+    .no-cover {
+        height: 160px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #e8f5e9, #fff9e6);
+        font-size: 2.5rem;
+        transition: transform .3s;
+    }
+    .card-type-ribbon {
+        position: absolute;
+        top: 10px; left: 10px;
+    }
+
+    /* Comment ça marche */
+    .how-step { text-align: center; padding: 2rem 1rem; }
+    .how-icon {
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.2rem;
+        font-size: 2rem;
+    }
+
+    /* Filières */
+    .filiere-card {
+        border: 2px solid #e8f5e9;
+        border-radius: 14px;
+        padding: 1rem;
+        text-align: center;
+        transition: all .25s;
+        background: white;
+        text-decoration: none;
+        display: block;
+    }
+    .filiere-card:hover {
+        border-color: #1a6b3a;
+        background: linear-gradient(135deg, #f0f9f4, #fff9e6);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(26,107,58,.12);
+    }
+
+    /* Section header */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    .section-header h2 {
+        position: relative;
+        padding-left: 1rem;
+    }
+    .section-header h2::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 10%; bottom: 10%;
+        width: 4px;
+        background: linear-gradient(#1a6b3a, #c9a227);
+        border-radius: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero-section d-flex align-items-center">
+    <div class="container py-5" style="position:relative;z-index:1">
+        <div class="row align-items-center">
+            <div class="col-lg-7 text-white">
+                <div class="hero-badge mb-3 animate-fade-left delay-1">
+                    <i class="bi bi-mortarboard me-1"></i>
+                    Faculté des Sciences — Université d'Ebolowa
+                </div>
+                <h1 class="display-5 fw-bold mb-3 animate-fade-left delay-2">
+                    Bibliothèque Numérique<br>
+                    <span style="color:#c9a227">des Travaux Académiques</span>
+                </h1>
+                <p class="lead mb-4 animate-fade-left delay-3"
+                   style="color:rgba(255,255,255,.8)">
+                    Accédez à l'ensemble des rapports de stage, projets de fin
+                    d'études, mémoires et thèses produits par les étudiants
+                    de la FS-UEB.
+                </p>
+                <div class="d-flex gap-3 flex-wrap animate-fade-left delay-4">
+                    <a href="{% url 'liste_projets' %}" class="btn-hero-primary">
+                        <i class="bi bi-search me-2"></i>Explorer les archives
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'soumettre' %}" class="btn-hero-secondary">
+                        <i class="bi bi-cloud-upload me-2"></i>Soumettre un travail
+                    </a>
+                    {% else %}
+                    <a href="{% url 'auth_page' %}" class="btn-hero-secondary">
+                        <i class="bi bi-person-plus me-2"></i>Créer un compte
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Mini stats -->
+                <div class="d-flex gap-4 mt-5 animate-fade-left delay-5">
+                    <div>
+                        <div class="fw-bold"
+                             style="font-size:1.4rem;color:#c9a227">
+                            {{ stats.total }}+
+                        </div>
+                        <div style="color:rgba(255,255,255,.6);font-size:.8rem">
+                            Travaux
+                        </div>
+                    </div>
+                    <div style="width:1px;background:rgba(255,255,255,.2)"></div>
+                    <div>
+                        <div class="fw-bold"
+                             style="font-size:1.4rem;color:#c9a227">
+                            {{ stats.filieres }}
+                        </div>
+                        <div style="color:rgba(255,255,255,.6);font-size:.8rem">
+                            Filières
+                        </div>
+                    </div>
+                    <div style="width:1px;background:rgba(255,255,255,.2)"></div>
+                    <div>
+                        <div class="fw-bold"
+                             style="font-size:1.4rem;color:#c9a227">
+                            {{ stats.etudiants }}+
+                        </div>
+                        <div style="color:rgba(255,255,255,.6);font-size:.8rem">
+                            Étudiants
+                        </div>
+                    </div>
+                    <div style="width:1px;background:rgba(255,255,255,.2)"></div>
+                    <div>
+                        <div class="fw-bold"
+                             style="font-size:1.4rem;color:#c9a227">
+                            {{ stats.telechargements }}+
+                        </div>
+                        <div style="color:rgba(255,255,255,.6);font-size:.8rem">
+                            Téléchargements
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5 text-center mt-4 mt-lg-0
+                        animate-fade-right delay-3">
+                <img src="{% static 'img/logo1.png' %}" alt="FS-UEB"
+                     style="max-height:300px;max-width:100%;
+                            object-fit:contain;
+                            filter:drop-shadow(0 20px 40px rgba(0,0,0,.3))"
+                     onerror="this.style.display='none'">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats animées -->
+<section class="stats-section py-5">
+    <div class="container">
+        <div class="row g-3 text-center">
+            <div class="col-6 col-md-3 animate-fade-up delay-1">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-archive-fill"></i>
+                    </div>
+                    <div class="stat-number counter"
+                         data-target="{{ stats.total }}">0</div>
+                    <div class="text-muted small mt-1 fw-semibold">
+                        Travaux archivés
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 animate-fade-up delay-2">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-diagram-3-fill"></i>
+                    </div>
+                    <div class="stat-number counter"
+                         data-target="{{ stats.filieres }}">0</div>
+                    <div class="text-muted small mt-1 fw-semibold">Filières</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 animate-fade-up delay-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <div class="stat-number counter"
+                         data-target="{{ stats.etudiants }}">0</div>
+                    <div class="text-muted small mt-1 fw-semibold">Étudiants</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 animate-fade-up delay-4">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-download"></i>
+                    </div>
+                    <div class="stat-number counter"
+                         data-target="{{ stats.telechargements }}">0</div>
+                    <div class="text-muted small mt-1 fw-semibold">
+                        Téléchargements
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Comment ça marche -->
+<section class="py-5" style="background:#f8fff9">
+    <div class="container">
+        <div class="text-center mb-5 animate-fade-up">
+            <span class="badge px-3 py-2 mb-2"
+                  style="background:#e8f5e9;color:#1a6b3a;
+                         border-radius:20px;font-size:.8rem">
+                Guide rapide
+            </span>
+            <h2 class="fw-bold" style="color:#0d3320">Comment ça marche ?</h2>
+            <p class="text-muted">3 étapes simples pour accéder aux archives</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4 animate-fade-up delay-1">
+                <div class="how-step">
+                    <div class="how-icon"
+                         style="background:linear-gradient(135deg,#e8f5e9,#f0f9f4)">
+                        <i class="bi bi-person-plus-fill"
+                           style="color:#1a6b3a"></i>
+                    </div>
+                    <div class="fw-bold mb-2"
+                         style="color:#0d3320;font-size:1.1rem">
+                        1. Créez votre compte
+                    </div>
+                    <p class="text-muted small">
+                        Inscrivez-vous en tant qu'étudiant ou enseignant
+                        en quelques secondes.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4 animate-fade-up delay-2">
+                <div class="how-step">
+                    <div class="how-icon"
+                         style="background:linear-gradient(135deg,#fff9e6,#fffdf0)">
+                        <i class="bi bi-search" style="color:#c9a227"></i>
+                    </div>
+                    <div class="fw-bold mb-2"
+                         style="color:#0d3320;font-size:1.1rem">
+                        2. Explorez les archives
+                    </div>
+                    <p class="text-muted small">
+                        Recherchez par filière, type de travail, année
+                        ou mots-clés.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4 animate-fade-up delay-3">
+                <div class="how-step">
+                    <div class="how-icon"
+                         style="background:linear-gradient(135deg,#e8f5e9,#fff9e6)">
+                        <i class="bi bi-cloud-download-fill"
+                           style="color:#1a6b3a"></i>
+                    </div>
+                    <div class="fw-bold mb-2"
+                         style="color:#0d3320;font-size:1.1rem">
+                        3. Téléchargez & Partagez
+                    </div>
+                    <p class="text-muted small">
+                        Téléchargez les travaux et soumettez les vôtres
+                        pour enrichir la bibliothèque.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Derniers travaux -->
+<section class="py-5">
+    <div class="container">
+        <div class="section-header animate-fade-up">
+            <h2 class="fw-bold mb-0" style="color:#0d3320">
+                Derniers travaux soumis
+            </h2>
+            <a href="{% url 'liste_projets' %}"
+               class="btn btn-outline-secondary btn-sm">
+                Voir tout <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="row g-4">
+            {% for projet in projets_recents %}
+            <div class="col-md-6 col-lg-4 animate-fade-up"
+                 style="animation-delay:{{ forloop.counter0 }}00ms">
+                <!-- Card entièrement cliquable via onclick -->
+                <div class="card h-100 projet-card"
+                     onclick="window.location.href='{% url 'detail_projet' projet.pk %}'">
+                    <div class="card-img-wrapper">
+                        {% if projet.couverture %}
+                        <img src="{{ projet.couverture.url }}"
+                             style="height:160px;width:100%;object-fit:cover"
+                             alt="{{ projet.titre }}">
+                        {% else %}
+                        <div class="no-cover">
+                            {% if projet.type_projet == 'rapport_stage' %}
+                            <i class="bi bi-briefcase text-success"></i>
+                            {% elif projet.type_projet == 'pfe' %}
+                            <i class="bi bi-mortarboard text-warning"></i>
+                            {% elif projet.type_projet == 'memoire' %}
+                            <i class="bi bi-book text-primary"></i>
+                            {% else %}
+                            <i class="bi bi-file-earmark-text text-secondary"></i>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="card-type-ribbon">
+                            <span class="badge bg-success-subtle text-success
+                                         badge-type">
+                                {{ projet.get_type_projet_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column p-3">
+                        <div class="d-flex gap-2 mb-2">
+                            <span class="badge badge-type
+                                         bg-primary-subtle text-primary">
+                                {{ projet.get_niveau_display }}
+                            </span>
+                            {% if projet.filiere %}
+                            <span class="badge badge-type bg-light text-muted">
+                                {{ projet.filiere.code }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <h6 class="card-title fw-semibold"
+                            style="line-height:1.4;color:#0d3320">
+                            {{ projet.titre|truncatechars:75 }}
+                        </h6>
+                        <p class="card-text text-muted small flex-grow-1">
+                            {{ projet.resume|truncatechars:95 }}
+                        </p>
+                        <div class="d-flex justify-content-between
+                                    align-items-center mt-2 pt-2"
+                             style="border-top:1px solid #e8f5e9">
+                            <small class="text-muted">
+                                <i class="bi bi-person-fill me-1"
+                                   style="color:#1a6b3a"></i>
+                                {{ projet.auteur.get_full_name|default:projet.auteur.username|truncatechars:20 }}
+                            </small>
+                            <div class="d-flex gap-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-eye me-1"></i>{{ projet.vues }}
+                                </small>
+                                <small class="text-muted">
+                                    <i class="bi bi-download me-1"></i>{{ projet.telechargements }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-archive"
+                   style="font-size:3rem;color:#ccc"></i>
+                <p class="text-muted mt-2">
+                    Aucun projet archivé pour l'instant.
+                </p>
+                {% if user.is_authenticated %}
+                <a href="{% url 'soumettre' %}" class="btn btn-ueb">
+                    Être le premier à soumettre
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Filières -->
+{% if filieres %}
+<section class="py-5" style="background:white">
+    <div class="container">
+        <div class="text-center mb-4 animate-fade-up">
+            <h2 class="fw-bold" style="color:#0d3320">
+                Parcourir par filière
+            </h2>
+            <p class="text-muted small">
+                Trouvez les travaux de votre domaine
+            </p>
+        </div>
+        <div class="row g-3 justify-content-center">
+            {% for filiere in filieres %}
+            <div class="col-6 col-md-4 col-lg-2 animate-fade-up"
+                 style="animation-delay:{{ forloop.counter0 }}00ms">
+                <a href="{% url 'liste_projets' %}?filiere={{ filiere.pk }}"
+                   class="filiere-card">
+                    <div class="fw-bold mb-1"
+                         style="color:#1a6b3a;font-size:1.1rem">
+                        {{ filiere.code }}
+                    </div>
+                    <div class="small text-muted mb-2">
+                        {{ filiere.nom|truncatechars:20 }}
+                    </div>
+                    <span class="badge"
+                          style="background:#e8f5e9;color:#1a6b3a;
+                                 border-radius:20px;font-size:.7rem">
+                        {{ filiere.nb }} travaux
+                    </span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- CTA final -->
+{% if not user.is_authenticated %}
+<section class="py-5"
+         style="background:linear-gradient(135deg,#0d3320,#1a6b3a)">
+    <div class="container text-center text-white animate-fade-up">
+        <h3 class="fw-bold mb-2">Rejoignez la communauté FS-UEB</h3>
+        <p style="color:rgba(255,255,255,.75);max-width:500px;
+                  margin:0 auto 1.5rem">
+            Créez votre compte gratuitement et accédez à toute la
+            bibliothèque numérique.
+        </p>
+        <a href="{% url 'auth_page' %}"
+           class="btn btn-lg px-5 fw-semibold"
+           style="background:#c9a227;color:white;border-radius:10px;
+                  border:none;transition:all .2s">
+            <i class="bi bi-person-plus me-2"></i>Créer mon compte
+        </a>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Compteurs animés ──────────────────────────────────────────────
+function animateCounter(el) {
+    const target = parseInt(el.getAttribute('data-target'));
+    if (target === 0) { el.textContent = '0'; return; }
+    const duration = 1500;
+    const step = target / (duration / 16);
+    let current = 0;
+    const timer = setInterval(() => {
+        current += step;
+        if (current >= target) {
+            el.textContent = target;
+            clearInterval(timer);
+        } else {
+            el.textContent = Math.floor(current);
+        }
+    }, 16);
+}
+
+const counters = document.querySelectorAll('.counter');
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            observer.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.5 });
+counters.forEach(counter => observer.observe(counter));
+
+// ── Navbar effet scroll ───────────────────────────────────────────
+window.addEventListener('scroll', () => {
+    const navbar = document.querySelector('.navbar-ueb');
+    if (window.scrollY > 50) {
+        navbar.style.backdropFilter = 'blur(10px)';
+        navbar.style.boxShadow = '0 4px 20px rgba(0,0,0,.2)';
+    } else {
+        navbar.style.backdropFilter = 'none';
+        navbar.style.boxShadow = '';
+    }
+});
+</script>
+{% endblock %}

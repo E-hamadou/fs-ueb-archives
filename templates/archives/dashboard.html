@@ -1,0 +1,522 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — FS-UEB{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-stat-card {
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        transition: transform .2s, box-shadow .2s;
+    }
+    .dash-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(0,0,0,.2);
+    }
+    .dash-stat-card::after {
+        content: '';
+        position: absolute;
+        top: -20px; right: -20px;
+        width: 100px; height: 100px;
+        background: rgba(255,255,255,.08);
+        border-radius: 50%;
+    }
+    .dash-stat-card::before {
+        content: '';
+        position: absolute;
+        bottom: -30px; right: 20px;
+        width: 140px; height: 140px;
+        background: rgba(255,255,255,.05);
+        border-radius: 50%;
+    }
+    .dash-stat-icon {
+        width: 48px; height: 48px;
+        background: rgba(255,255,255,.2);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+    }
+    .dash-stat-number {
+        font-size: 2.4rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .dash-stat-label {
+        font-size: .85rem;
+        opacity: .85;
+        margin-top: .3rem;
+    }
+    .chart-card {
+        border: 2px solid #e8f5e9;
+        border-radius: 16px;
+        padding: 1.5rem;
+        background: white;
+        box-shadow: 0 4px 20px rgba(0,0,0,.04);
+        height: 100%;
+    }
+    .chart-title {
+        font-weight: 700;
+        color: #0d3320;
+        font-size: .95rem;
+        margin-bottom: 1.2rem;
+        padding-bottom: .8rem;
+        border-bottom: 2px solid #e8f5e9;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+    .table-dash th {
+        font-size: .8rem;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        border-bottom: 2px solid #e8f5e9;
+    }
+    .table-dash td { font-size: .88rem; vertical-align: middle; }
+    .table-dash tr:hover { background: #f8fff9; }
+    .status-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    .action-btn {
+        border-radius: 8px;
+        font-size: .78rem;
+        padding: .3rem .7rem;
+        font-weight: 600;
+        transition: all .15s;
+    }
+    .action-btn:hover { transform: translateY(-1px); }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in {
+        animation: fadeInUp .5s ease forwards;
+        opacity: 0;
+    }
+    .delay-1 { animation-delay: .1s; }
+    .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; }
+    .delay-4 { animation-delay: .4s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4 animate-in">
+        <div>
+            <h3 class="fw-bold mb-0" style="color:#0d3320">
+                <i class="bi bi-speedometer2 me-2" style="color:#1a6b3a"></i>
+                Dashboard Administrateur
+            </h3>
+            <small class="text-muted">
+                <i class="bi bi-clock me-1"></i>
+                Dernière mise à jour : aujourd'hui
+            </small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'statistiques' %}"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-graph-up me-1"></i>Stats publiques
+            </a>
+            <a href="{% url 'export_excel' %}" class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+            </a>
+            <a href="{% url 'export_pdf' %}" class="btn btn-danger btn-sm">
+                <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Cartes stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3 animate-in delay-1">
+            <div class="dash-stat-card"
+                 style="background:linear-gradient(135deg,#1a6b3a,#2d8a52)">
+                <div class="dash-stat-icon">
+                    <i class="bi bi-archive-fill"></i>
+                </div>
+                <div class="dash-stat-number">{{ stats.total }}</div>
+                <div class="dash-stat-label">Total projets</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 animate-in delay-2">
+            <div class="dash-stat-card"
+                 style="background:linear-gradient(135deg,#0d6efd,#3d8ef8)">
+                <div class="dash-stat-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="dash-stat-number">{{ stats.valides }}</div>
+                <div class="dash-stat-label">Validés</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 animate-in delay-3">
+            <div class="dash-stat-card"
+                 style="background:linear-gradient(135deg,#fd7e14,#ffa94d)">
+                <div class="dash-stat-icon">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="dash-stat-number">{{ stats.en_attente }}</div>
+                <div class="dash-stat-label">En attente</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 animate-in delay-4">
+            <div class="dash-stat-card"
+                 style="background:linear-gradient(135deg,#c9a227,#e8c45a)">
+                <div class="dash-stat-icon">
+                    <i class="bi bi-download"></i>
+                </div>
+                <div class="dash-stat-number">{{ stats.total_dl }}</div>
+                <div class="dash-stat-label">Téléchargements</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row g-4 mb-4">
+
+        <!-- Camembert par type -->
+        <div class="col-md-4 animate-in delay-1">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="bi bi-pie-chart-fill"
+                       style="color:#1a6b3a"></i>Répartition par type
+                </div>
+                <canvas id="chartType" height="220"></canvas>
+            </div>
+        </div>
+
+        <!-- Barres par filière -->
+        <div class="col-md-4 animate-in delay-2">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="bi bi-bar-chart-fill"
+                       style="color:#c9a227"></i>Projets par filière
+                </div>
+                <canvas id="chartFiliere" height="220"></canvas>
+            </div>
+        </div>
+
+        <!-- Courbe par année -->
+        <div class="col-md-4 animate-in delay-3">
+            <div class="chart-card">
+                <div class="chart-title">
+                    <i class="bi bi-graph-up"
+                       style="color:#0d6efd"></i>Évolution annuelle
+                </div>
+                <canvas id="chartAnnee" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projets en attente -->
+    {% if projets_en_attente %}
+    <div class="card mb-4 animate-in"
+         style="border:2px solid #fff3cd;border-radius:16px">
+        <div class="card-header fw-bold"
+             style="background:#fffdf0;border-radius:14px 14px 0 0;
+                    border-bottom:2px solid #fff3cd;color:#856404">
+            <i class="bi bi-hourglass-split me-2 text-warning"></i>
+            Projets en attente de validation
+            <span class="badge bg-warning text-dark ms-2">
+                {{ projets_en_attente.count }}
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-dash mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Titre</th>
+                        <th>Auteur</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for projet in projets_en_attente %}
+                    <tr>
+                        <td class="ps-3 fw-semibold">
+                            {{ projet.titre|truncatechars:50 }}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center
+                                            justify-content-center text-white fw-bold"
+                                     style="width:28px;height:28px;
+                                            background:#1a6b3a;font-size:.7rem;
+                                            flex-shrink:0">
+                                    {{ projet.auteur.first_name.0|default:projet.auteur.username.0|upper }}
+                                </div>
+                                <span>{{ projet.auteur.get_full_name|default:projet.auteur.username }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary">
+                                {{ projet.get_type_projet_display }}
+                            </span>
+                        </td>
+                        <td class="text-muted small">
+                            {{ projet.date_soumission|date:"d/m/Y" }}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'valider_projet' projet.pk %}"
+                                   class="btn btn-success action-btn"
+                                   onclick="return confirm('Valider ce projet ?')">
+                                    <i class="bi bi-check-lg me-1"></i>Valider
+                                </a>
+                                <a href="{% url 'rejeter_projet' projet.pk %}"
+                                   class="btn btn-danger action-btn"
+                                   onclick="return confirm('Rejeter ce projet ?')">
+                                    <i class="bi bi-x-lg me-1"></i>Rejeter
+                                </a>
+                                <a href="/admin/archives/projet/{{ projet.pk }}/change/"
+                                   class="btn btn-outline-secondary action-btn">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Derniers projets -->
+    <div class="card animate-in"
+         style="border:2px solid #e8f5e9;border-radius:16px">
+        <div class="card-header fw-bold"
+             style="background:#f8fff9;border-radius:14px 14px 0 0;
+                    border-bottom:2px solid #e8f5e9;color:#0d3320">
+            <i class="bi bi-clock-history me-2"
+               style="color:#1a6b3a"></i>Derniers projets soumis
+        </div>
+        <div class="table-responsive">
+            <table class="table table-dash mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Titre</th>
+                        <th>Auteur</th>
+                        <th>Filière</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for projet in projets_recents %}
+                    <tr>
+                        <td class="ps-3">
+                            <span class="fw-semibold small">
+                                {{ projet.titre|truncatechars:45 }}
+                            </span>
+                        </td>
+                        <td>
+                            <small>
+                                {{ projet.auteur.get_full_name|default:projet.auteur.username }}
+                            </small>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ projet.filiere.code|default:"-" }}
+                            </small>
+                        </td>
+                        <td>
+                            {% if projet.statut == 'valide' %}
+                            <span class="badge bg-success-subtle text-success">
+                                <span class="status-dot"
+                                      style="background:#198754"></span>
+                                Validé
+                            </span>
+                            {% elif projet.statut == 'rejete' %}
+                            <span class="badge bg-danger-subtle text-danger">
+                                <span class="status-dot"
+                                      style="background:#dc3545"></span>
+                                Rejeté
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning-emphasis">
+                                <span class="status-dot"
+                                      style="background:#fd7e14"></span>
+                                En attente
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ projet.date_soumission|date:"d/m/Y" }}
+                            </small>
+                        </td>
+                        <td>
+                            <a href="/admin/archives/projet/{{ projet.pk }}/change/"
+                               class="btn btn-outline-secondary btn-sm"
+                               style="border-radius:8px">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Données depuis Django
+const parType = {{ par_type|safe }};
+const parFiliere = {{ par_filiere|safe }};
+const parAnnee = {{ par_annee|safe }};
+
+// Couleurs
+const COLORS = [
+    '#1a6b3a','#c9a227','#0d6efd','#fd7e14',
+    '#6f42c1','#20c997','#dc3545','#0dcaf0'
+];
+
+// ── Camembert par type ────────────────────────────────────────────
+const typeLabels = {
+    'rapport_stage': 'Rapport Stage',
+    'pfe': 'PFE',
+    'memoire': 'Mémoire',
+    'these': 'Thèse',
+    'tp': 'TP',
+    'autre': 'Autre'
+};
+new Chart(document.getElementById('chartType'), {
+    type: 'doughnut',
+    data: {
+        labels: parType.map(d => typeLabels[d.type_projet] || d.type_projet),
+        datasets: [{
+            data: parType.map(d => d.nb),
+            backgroundColor: COLORS,
+            borderWidth: 3,
+            borderColor: '#fff',
+            hoverBorderWidth: 0,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    boxWidth: 12,
+                    padding: 12,
+                    font: { size: 11 }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.label} : ${ctx.raw} projet(s)`
+                }
+            }
+        },
+        cutout: '60%',
+        animation: { animateRotate: true, duration: 1000 }
+    }
+});
+
+// ── Barres par filière ────────────────────────────────────────────
+new Chart(document.getElementById('chartFiliere'), {
+    type: 'bar',
+    data: {
+        labels: parFiliere.map(d => d.filiere__code || 'N/A'),
+        datasets: [{
+            label: 'Projets',
+            data: parFiliere.map(d => d.nb),
+            backgroundColor: parFiliere.map((_, i) =>
+                COLORS[i % COLORS.length] + 'cc'),
+            borderColor: parFiliere.map((_, i) =>
+                COLORS[i % COLORS.length]),
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.raw} projet(s)`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, font: { size: 11 } },
+                grid: { color: '#f0f0f0' }
+            },
+            x: {
+                ticks: { font: { size: 11 } },
+                grid: { display: false }
+            }
+        },
+        animation: { duration: 1000 }
+    }
+});
+
+// ── Courbe évolution annuelle ─────────────────────────────────────
+new Chart(document.getElementById('chartAnnee'), {
+    type: 'line',
+    data: {
+        labels: parAnnee.map(d => d.annee),
+        datasets: [{
+            label: 'Projets soumis',
+            data: parAnnee.map(d => d.nb),
+            borderColor: '#1a6b3a',
+            backgroundColor: 'rgba(26,107,58,.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: .4,
+            pointBackgroundColor: '#1a6b3a',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.raw} projet(s) en ${ctx.label}`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, font: { size: 11 } },
+                grid: { color: '#f0f0f0' }
+            },
+            x: {
+                ticks: { font: { size: 11 } },
+                grid: { display: false }
+            }
+        },
+        animation: { duration: 1200 }
+    }
+});
+</script>
+{% endblock %}

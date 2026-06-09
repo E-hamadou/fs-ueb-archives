@@ -1,0 +1,325 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FS-UEB Archives — Authentification</title>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
+    <meta name="theme-color" content="#1a6b3a">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0d3320 0%, #1a6b3a 50%, #2d8a52 100%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .auth-container {
+            width: 100%; max-width: 920px;
+            background: white; border-radius: 20px;
+            overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,.35);
+        }
+        .auth-left {
+            background: linear-gradient(180deg, #0d3320 0%, #1a6b3a 100%);
+            padding: 3rem 2rem; color: white; text-align: center;
+        }
+        .auth-right { padding: 2.5rem; }
+        .tab-auth .nav-link {
+            color: #666; font-weight: 500; border: none;
+            border-bottom: 2px solid transparent; border-radius: 0; padding: .6rem 1.2rem;
+        }
+        .tab-auth .nav-link.active {
+            color: #1a6b3a; border-bottom-color: #1a6b3a; background: none;
+        }
+        .btn-ueb { background: #1a6b3a; color: white; border: none; font-weight: 500; }
+        .btn-ueb:hover { background: #0d3320; color: white; }
+        .form-control:focus {
+            border-color: #1a6b3a;
+            box-shadow: 0 0 0 .2rem rgba(26,107,58,.15);
+        }
+        .input-group-text { background: #f8f9fa; border-right: none; }
+        .form-control.icon-input { border-left: none; }
+        .divider {
+            display: flex; align-items: center; gap: 1rem;
+            margin: 1rem 0; color: #aaa; font-size: .85rem;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: #eee;
+        }
+        .role-card {
+            border: 2px solid #eee; border-radius: 10px; padding: .8rem;
+            cursor: pointer; transition: all .2s; text-align: center;
+        }
+        .role-card:hover { border-color: #1a6b3a; background: #f0f9f4; }
+        .role-card input[type=radio] { display: none; }
+        .role-card.selected { border-color: #1a6b3a; background: #f0f9f4; }
+        .role-icon { font-size: 1.8rem; margin-bottom: .3rem; }
+        .alert-auth { border-radius: 8px; font-size: .88rem; }
+        @media (max-width: 767px) {
+            .auth-left { padding: 2rem 1.5rem; }
+            .auth-left img { max-height: 80px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="row g-0">
+
+        <!-- Panneau gauche -->
+        <div class="col-md-5 auth-left d-flex flex-column justify-content-center">
+            <img src="{% static 'img/logo.PNG' %}" alt="FS-UEB"
+                 style="max-height:110px;margin-bottom:1.5rem;object-fit:contain"
+                 onerror="this.style.display='none'">
+            <h2 class="fw-bold mb-2" style="font-size:1.4rem">FS-UEB Archives</h2>
+            <p style="color:rgba(255,255,255,.75);font-size:.9rem;line-height:1.6">
+                Plateforme d'archivage des travaux académiques de la
+                Faculté des Sciences de l'Université d'Ebolowa
+            </p>
+            <hr style="border-color:rgba(255,255,255,.2);margin:1.5rem 0">
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center gap-2"
+                     style="color:rgba(255,255,255,.8);font-size:.85rem">
+                    <i class="bi bi-check-circle-fill" style="color:#c9a227"></i>
+                    Rapports de stage &amp; PFE
+                </div>
+                <div class="d-flex align-items-center gap-2"
+                     style="color:rgba(255,255,255,.8);font-size:.85rem">
+                    <i class="bi bi-check-circle-fill" style="color:#c9a227"></i>
+                    Mémoires &amp; Thèses
+                </div>
+                <div class="d-flex align-items-center gap-2"
+                     style="color:rgba(255,255,255,.8);font-size:.85rem">
+                    <i class="bi bi-check-circle-fill" style="color:#c9a227"></i>
+                    Accès sécurisé par rôle
+                </div>
+                <div class="d-flex align-items-center gap-2"
+                     style="color:rgba(255,255,255,.8);font-size:.85rem">
+                    <i class="bi bi-check-circle-fill" style="color:#c9a227"></i>
+                    Export Excel &amp; PDF
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau droit -->
+        <div class="col-md-7 auth-right">
+
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-auth
+                        alert-dismissible mb-3">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Onglets -->
+            <ul class="nav tab-auth border-bottom mb-4" id="authTabs">
+                <li class="nav-item">
+                    <a class="nav-link {% if not show_inscription %}active{% endif %}"
+                       data-bs-toggle="tab" href="#tab-login" id="btn-login-tab">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Connexion
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if show_inscription %}active{% endif %}"
+                       data-bs-toggle="tab" href="#tab-inscription" id="btn-inscription-tab">
+                        <i class="bi bi-person-plus me-1"></i>Créer un compte
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+
+                <!-- TAB LOGIN -->
+                <div class="tab-pane fade {% if not show_inscription %}show active{% endif %}"
+                     id="tab-login">
+                    <h5 class="fw-bold mb-4" style="color:#0d3320">Bon retour !</h5>
+
+                    {% if login_error %}
+                    <div class="alert alert-danger alert-auth">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Identifiant ou mot de passe incorrect.
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Identifiant</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-person text-muted"></i>
+                                </span>
+                                <input type="text" name="username"
+                                       value="{{ username_saisi|default:'' }}"
+                                       class="form-control icon-input"
+                                       placeholder="Votre identifiant" required autofocus>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small">Mot de passe</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-lock text-muted"></i>
+                                </span>
+                                <input type="password" name="password"
+                                       class="form-control icon-input"
+                                       placeholder="Votre mot de passe" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-ueb w-100 py-2">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+                        </button>
+                    </form>
+
+                    <div class="divider">ou</div>
+                    <p class="text-center text-muted small mb-0">
+                        Pas encore de compte ?
+                        <a href="#tab-inscription" class="text-decoration-none fw-semibold"
+                           style="color:#1a6b3a"
+                           onclick="document.getElementById('btn-inscription-tab').click()">
+                            Créer un compte
+                        </a>
+                    </p>
+                </div>
+
+                <!-- TAB INSCRIPTION -->
+                <div class="tab-pane fade {% if show_inscription %}show active{% endif %}"
+                     id="tab-inscription">
+                    <h5 class="fw-bold mb-3" style="color:#0d3320">Créer votre compte</h5>
+
+                    <!-- Choix du rôle -->
+                    <p class="small text-muted mb-2">Je suis :</p>
+                    <div class="row g-2 mb-3" id="role-cards">
+                        <div class="col-6">
+                            <label class="role-card w-100 selected" id="card-etudiant">
+                                <div class="role-icon">🎓</div>
+                                <div class="small fw-semibold">Étudiant</div>
+                                <input type="radio" name="role_select"
+                                       value="etudiant" checked>
+                            </label>
+                        </div>
+                        <div class="col-6">
+                            <label class="role-card w-100" id="card-enseignant">
+                                <div class="role-icon">👨‍🏫</div>
+                                <div class="small fw-semibold">Enseignant</div>
+                                <input type="radio" name="role_select" value="enseignant">
+                            </label>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{% url 'inscription' %}" id="form-inscription">
+                        {% csrf_token %}
+                        <input type="hidden" name="role" id="role-hidden" value="etudiant">
+
+                        {% if form_inscription.errors %}
+                        <div class="alert alert-danger alert-auth small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Corrigez les erreurs ci-dessous.
+                        </div>
+                        {% endif %}
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Prénom</label>
+                                <input type="text" name="first_name"
+                                       class="form-control form-control-sm"
+                                       placeholder="Prénom" required
+                                       value="{{ form_inscription.first_name.value|default:'' }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Nom</label>
+                                <input type="text" name="last_name"
+                                       class="form-control form-control-sm"
+                                       placeholder="Nom" required
+                                       value="{{ form_inscription.last_name.value|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Identifiant</label>
+                            <input type="text" name="username"
+                                   class="form-control form-control-sm"
+                                   placeholder="Identifiant unique" required
+                                   value="{{ form_inscription.username.value|default:'' }}">
+                            {% if form_inscription.username.errors %}
+                            <div class="text-danger" style="font-size:.75rem">
+                                {{ form_inscription.username.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Email</label>
+                            <input type="email" name="email"
+                                   class="form-control form-control-sm"
+                                   placeholder="votre@email.com"
+                                   value="{{ form_inscription.email.value|default:'' }}">
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">
+                                    Mot de passe
+                                </label>
+                                <input type="password" name="password1"
+                                       class="form-control form-control-sm"
+                                       placeholder="Mot de passe" required>
+                                {% if form_inscription.password1.errors %}
+                                <div class="text-danger" style="font-size:.75rem">
+                                    {{ form_inscription.password1.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Confirmer</label>
+                                <input type="password" name="password2"
+                                       class="form-control form-control-sm"
+                                       placeholder="Confirmation" required>
+                                {% if form_inscription.password2.errors %}
+                                <div class="text-danger" style="font-size:.75rem">
+                                    {{ form_inscription.password2.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-ueb w-100 py-2">
+                            <i class="bi bi-person-check me-2"></i>Créer mon compte
+                        </button>
+                    </form>
+
+                    <div class="divider">ou</div>
+                    <p class="text-center text-muted small mb-0">
+                        Déjà inscrit ?
+                        <a href="#tab-login" class="text-decoration-none fw-semibold"
+                           style="color:#1a6b3a"
+                           onclick="document.getElementById('btn-login-tab').click()">
+                            Se connecter
+                        </a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('.role-card').forEach(card => {
+    card.addEventListener('click', function() {
+        document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+        this.classList.add('selected');
+        const val = this.querySelector('input[type=radio]').value;
+        document.getElementById('role-hidden').value = val;
+    });
+});
+document.getElementById('card-etudiant').classList.add('selected');
+</script>
+</body>
+</html>
