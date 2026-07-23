@@ -53,17 +53,33 @@ class ProjetForm(forms.ModelForm):
         model = Projet
         fields = ['titre', 'type_projet', 'niveau', 'filiere',
                   'encadreur', 'annee', 'resume', 'mots_cles',
-                  'fichier', 'couverture']
+                  'fichier', 'couverture', 'visibilite']
         widgets = {
             'resume': forms.Textarea(attrs={'rows': 5}),
             'mots_cles': forms.TextInput(
                 attrs={'placeholder': 'Python, Django, IA, ...'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Seuls le personnel et les administrateurs peuvent restreindre
+        # la visibilité d'un document ; pour les autres, ce champ est
+        # retiré du formulaire et le modèle garde sa valeur par défaut
+        # ('public'), quoi qu'il arrive côté client.
+        peut_restreindre = user is not None and (
+            user.is_staff or
+            (hasattr(user, 'profil') and user.profil.role in ('personnel', 'admin'))
+        )
+        if not peut_restreindre:
+            self.fields.pop('visibilite', None)
+        else:
+            self.fields['visibilite'].help_text = (
+                "Un document restreint n'apparaît ni dans le catalogue, ni dans "
+                "la recherche, ni au téléchargement pour les étudiants et enseignants."
+            )
+
         self.helper = FormHelper()
-        self.helper.layout = Layout(
+        layout_fields = [
             'titre',
             Row(
                 Column('type_projet', css_class='col-md-4'),
@@ -79,9 +95,14 @@ class ProjetForm(forms.ModelForm):
                 Column('fichier', css_class='col-md-8'),
                 Column('couverture', css_class='col-md-4'),
             ),
+        ]
+        if peut_restreindre:
+            layout_fields.append('visibilite')
+        layout_fields.append(
             Submit('submit', 'Soumettre le projet',
-                   css_class='btn btn-success w-100 mt-3'),
+                   css_class='btn btn-success w-100 mt-3')
         )
+        self.helper.layout = Layout(*layout_fields)
 
 
 class CommentaireForm(forms.ModelForm):
