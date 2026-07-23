@@ -4,7 +4,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Avg
-from django.http import HttpResponse, FileResponse, JsonResponse
+from django.http import HttpResponse, FileResponse, JsonResponse, Http404
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
@@ -28,6 +28,14 @@ def is_admin(user):
 def is_enseignant(user):
     return user.is_authenticated and hasattr(user, 'profil') and \
            user.profil.role in ['enseignant', 'admin']
+
+def is_personnel_ou_admin(user):
+    """Personnel et Administrateur : seuls profils autorisés à voir et
+    déposer des documents à visibilité restreinte."""
+    return user.is_authenticated and (
+        user.is_staff or
+        (hasattr(user, 'profil') and user.profil.role in ('personnel', 'admin'))
+    )
 
 
 # ── AUTH ───────────────────────────────────────────────────────────
@@ -89,8 +97,8 @@ def inscription(request):
 # ── Pages principales ──────────────────────────────────────────────
 @login_required
 def home(request):
-    projets_recents = Projet.objects.filter(
-        statut='valide').select_related('auteur', 'filiere')[:6]
+    projets_recents = Projet.visibles_pour(
+        request.user).select_related('auteur', 'filiere')[:6]
     stats = {
         'total': Projet.objects.filter(statut='valide').count(),
         'filieres': Filiere.objects.count(),
@@ -109,8 +117,8 @@ def home(request):
 
 @login_required
 def liste_projets(request):
-    projets_qs = Projet.objects.filter(
-        statut='valide').select_related('auteur', 'filiere')
+    projets_qs = Projet.visibles_pour(
+        request.user).select_related('auteur', 'filiere')
     q = request.GET.get('q', '')
     if q:
         projets_qs = projets_qs.filter(
@@ -122,8 +130,7 @@ def liste_projets(request):
     try:
         if hasattr(request.user, 'profil') and request.user.profil.filiere:
             filiere_user = request.user.profil.filiere
-            projets_filiere = Projet.objects.filter(
-                statut='valide',
+            projets_filiere = Projet.visibles_pour(request.user).filter(
                 filiere=filiere_user
             ).select_related('auteur', 'filiere').order_by('-date_soumission')[:4]
     except Exception:
@@ -144,6 +151,8 @@ def liste_projets(request):
 @login_required
 def detail_projet(request, pk):
     projet = get_object_or_404(Projet, pk=pk, statut='valide')
+    if not projet.est_visible_pour(request.user):
+        raise Http404("Ce document n'est pas accessible.")
     Projet.objects.filter(pk=pk).update(vues=projet.vues + 1)
     commentaires = projet.commentaires.filter(approuve=True)
     form_commentaire = CommentaireForm()
@@ -170,8 +179,8 @@ def detail_projet(request, pk):
                 )
             messages.success(request, "Commentaire ajouté !")
             return redirect('detail_projet', pk=pk)
-    projets_similaires = Projet.objects.filter(
-        statut='valide', filiere=projet.filiere
+    projets_similaires = Projet.visibles_pour(request.user).filter(
+        filiere=projet.filiere
     ).exclude(pk=pk)[:3]
     return render(request, 'archives/detail.html', {
         'projet': projet,
@@ -184,6 +193,8 @@ def detail_projet(request, pk):
 @login_required
 def telecharger_projet(request, pk):
     projet = get_object_or_404(Projet, pk=pk, statut='valide')
+    if not projet.est_visible_pour(request.user):
+        raise Http404("Ce document n'est pas accessible.")
     Projet.objects.filter(pk=pk).update(
         telechargements=projet.telechargements + 1)
     return FileResponse(open(projet.fichier.path, 'rb'), as_attachment=True)
@@ -192,7 +203,7 @@ def telecharger_projet(request, pk):
 @login_required
 def soumettre_projet(request):
     if request.method == 'POST':
-        form = ProjetForm(request.POST, request.FILES)
+        form = ProjetForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             projet = form.save(commit=False)
             projet.auteur = request.user
@@ -214,8 +225,11 @@ def soumettre_projet(request):
             messages.success(request, "Projet soumis ! En attente de validation.")
             return redirect('profil')
     else:
-        form = ProjetForm()
-    return render(request, 'archives/upload.html', {'form': form})
+        form = ProjetForm(user=request.user)
+    return render(request, 'archives/upload.html', {
+        'form': form,
+        'peut_restreindre': is_personnel_ou_admin(request.user),
+    })
 
 
 @login_required
@@ -489,7 +503,7 @@ def api_recherche(request):
     q = request.GET.get('q', '').strip()
     if len(q) < 2:
         return JsonResponse({'results': []})
-    projets = Projet.objects.filter(statut='valide').filter(
+    projets = Projet.visibles_pour(request.user).filter(
         Q(titre__icontains=q) |
         Q(auteur__last_name__icontains=q) |
         Q(mots_cles__icontains=q) |
