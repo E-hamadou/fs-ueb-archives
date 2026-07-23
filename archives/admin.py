@@ -12,10 +12,30 @@ class ProfilInline(admin.StackedInline):
 
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfilInline,)
+    # Colonne rôle visible directement dans la liste des utilisateurs,
+    # pratique pour repérer d'un coup d'œil qui est Personnel ou Admin.
+    list_display = UserAdmin.list_display + ('get_role',)
+
+    def get_role(self, obj):
+        return obj.profil.get_role_display() if hasattr(obj, 'profil') else '—'
+    get_role.short_description = 'Rôle'
 
 
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
+
+
+@admin.register(Profil)
+class ProfilAdmin(admin.ModelAdmin):
+    """Vue dédiée pour parcourir, filtrer et modifier les rôles en masse —
+    en particulier pour assigner ou retirer le rôle Personnel sans avoir
+    à ouvrir chaque utilisateur individuellement."""
+    list_display = ['user', 'role', 'filiere', 'matricule', 'telephone']
+    list_filter = ['role', 'filiere']
+    search_fields = ['user__username', 'user__first_name',
+                      'user__last_name', 'user__email', 'matricule']
+    list_editable = ['role']
+    autocomplete_fields = ['user']
 
 
 @admin.register(Filiere)
@@ -26,10 +46,11 @@ class FiliereAdmin(admin.ModelAdmin):
 
 @admin.register(Projet)
 class ProjetAdmin(admin.ModelAdmin):
-    list_display = ['titre', 'auteur', 'type_projet', 'niveau', 'filiere', 'annee', 'statut', 'vues', 'date_soumission']
-    list_filter = ['statut', 'type_projet', 'niveau', 'filiere', 'annee']
+    list_display = ['titre', 'auteur', 'type_projet', 'niveau', 'filiere',
+                     'annee', 'statut', 'visibilite', 'vues', 'date_soumission']
+    list_filter = ['statut', 'visibilite', 'type_projet', 'niveau', 'filiere', 'annee']
     search_fields = ['titre', 'auteur__username', 'auteur__last_name', 'resume', 'mots_cles']
-    list_editable = ['statut']
+    list_editable = ['statut', 'visibilite']
     readonly_fields = ['vues', 'telechargements', 'date_soumission']
     date_hierarchy = 'date_soumission'
     actions = ['valider_projets', 'rejeter_projets']
