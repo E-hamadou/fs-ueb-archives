@@ -15,6 +15,11 @@
             <!-- Projet principal -->
             <div class="card p-4 mb-4">
                 <div class="d-flex gap-2 mb-3 flex-wrap">
+                    {% if projet.visibilite == 'restreint' %}
+                    <span class="badge bg-dark text-white fs-6">
+                        <i class="bi bi-lock-fill me-1"></i>Restreint — Personnel et Administration
+                    </span>
+                    {% endif %}
                     <span class="badge bg-success-subtle text-success fs-6">{{ projet.get_type_projet_display }}</span>
                     <span class="badge bg-primary-subtle text-primary fs-6">{{ projet.get_niveau_display }}</span>
                     {% if projet.filiere %}
@@ -141,7 +146,10 @@
                     <div class="d-flex gap-2 mb-2 p-2 rounded" style="background:#f8f9fa">
                         <i class="bi bi-file-earmark-text text-muted mt-1"></i>
                         <div>
-                            <div class="small fw-semibold text-dark">{{ p.titre|truncatechars:55 }}</div>
+                            <div class="small fw-semibold text-dark">
+                                {% if p.visibilite == 'restreint' %}<i class="bi bi-lock-fill text-dark me-1" title="Restreint"></i>{% endif %}
+                                {{ p.titre|truncatechars:55 }}
+                            </div>
                             <div class="text-muted" style="font-size:.7rem">{{ p.annee }}</div>
                         </div>
                     </div>
