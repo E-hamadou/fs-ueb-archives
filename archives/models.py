@@ -21,6 +21,7 @@ class Profil(models.Model):
     ROLE_CHOICES = [
         ('etudiant', 'Étudiant'),
         ('enseignant', 'Enseignant'),
+        ('personnel', 'Personnel (Université)'),
         ('admin', 'Administrateur'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profil')
@@ -60,6 +61,10 @@ class Projet(models.Model):
         ('rejete', 'Rejeté'),
         ('archive', 'Archivé'),
     ]
+    VISIBILITE_CHOICES = [
+        ('public', 'Public — visible par tous les utilisateurs'),
+        ('restreint', 'Restreint — Personnel et Administration uniquement'),
+    ]
 
     titre = models.CharField(max_length=300, verbose_name="Titre du projet")
     auteur = models.ForeignKey(User, on_delete=models.CASCADE, related_name='projets')
@@ -73,6 +78,11 @@ class Projet(models.Model):
     fichier = models.FileField(upload_to='projets/%Y/%m/', verbose_name="Fichier (PDF)")
     couverture = models.ImageField(upload_to='couvertures/', blank=True, null=True, verbose_name="Image de couverture")
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='en_attente')
+    visibilite = models.CharField(
+        max_length=20, choices=VISIBILITE_CHOICES, default='public',
+        verbose_name="Visibilité",
+        help_text="Un document restreint n'est visible que par le personnel et les administrateurs."
+    )
     note = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, verbose_name="Note /20")
     vues = models.PositiveIntegerField(default=0)
     telechargements = models.PositiveIntegerField(default=0)
@@ -88,6 +98,32 @@ class Projet(models.Model):
 
     def get_mots_cles_list(self):
         return [m.strip() for m in self.mots_cles.split(',') if m.strip()]
+
+    @staticmethod
+    def _role_autorise_restreint(user):
+        """Un utilisateur peut-il voir les documents restreints ?"""
+        if not user.is_authenticated:
+            return False
+        if user.is_staff:
+            return True
+        return hasattr(user, 'profil') and user.profil.role in ('personnel', 'admin')
+
+    def est_visible_pour(self, user):
+        """Détermine si CE projet est accessible à l'utilisateur donné."""
+        if self.visibilite != 'restreint':
+            return True
+        return Projet._role_autorise_restreint(user)
+
+    @staticmethod
+    def visibles_pour(user, queryset=None):
+        """Queryset des projets validés visibles pour l'utilisateur donné.
+        À utiliser partout où l'on liste ou recherche des projets, pour ne
+        jamais exposer un document restreint à un étudiant ou un enseignant."""
+        qs = queryset if queryset is not None else Projet.objects.all()
+        qs = qs.filter(statut='valide')
+        if not Projet._role_autorise_restreint(user):
+            qs = qs.exclude(visibilite='restreint')
+        return qs
 
 
 class Commentaire(models.Model):
