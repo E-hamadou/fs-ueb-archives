@@ -301,6 +301,39 @@
                         </div>
                     </div>
 
+                    {% if peut_restreindre %}
+                    <!-- Section 4 : Visibilité (Personnel / Administration) -->
+                    <div class="section-title">
+                        <i class="bi bi-shield-lock me-2"
+                           style="color:#1a6b3a"></i>Visibilité du document
+                    </div>
+                    <div class="mb-4">
+                        <div class="p-3"
+                             style="background:#fffdf0;border:1px solid #f0e0a0;
+                                    border-radius:12px">
+                            <label class="form-label fw-semibold"
+                                   style="color:#7a5c00">
+                                <i class="bi bi-eye me-1"></i>Qui peut voir ce document ?
+                            </label>
+                            <select name="visibilite" class="form-select"
+                                    style="border-radius:10px">
+                                <option value="public" selected>
+                                    Public — visible par tous les utilisateurs
+                                </option>
+                                <option value="restreint">
+                                    Restreint — Personnel et Administration uniquement
+                                </option>
+                            </select>
+                            <div class="form-text mb-0">
+                                Un document restreint n'apparaît ni dans le
+                                catalogue, ni dans la recherche, ni au
+                                téléchargement pour les étudiants et les
+                                enseignants.
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Conseil -->
                     <div class="tip-card mb-4">
                         <div class="fw-semibold mb-1" style="color:#1a6b3a">
